@@ -1,0 +1,43 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'dev.reporunner'
+version = '0.2.0'
+
+android {
+  namespace "expo.modules.runner"
+  defaultConfig {
+    versionCode 2
+    versionName '0.2.0'
+    ndk {
+      abiFilters 'arm64-v8a'
+    }
+  }
+  // libpty.so – the small C helper that gives the terminal a real PTY.
+  externalNativeBuild {
+    cmake {
+      path "CMakeLists.txt"
+    }
+  }
+  // The proot binaries in src/main/jniLibs are real executables, not JNI
+  // libraries. Keeping them uncompressed + extracted (see useLegacyPackaging in
+  // app.json) puts them in nativeLibraryDir, the one app folder Android still
+  // allows us to execute from on API 29+.
+  packagingOptions {
+    jniLibs {
+      useLegacyPackaging = true
+    }
+  }
+}
+
+dependencies {
+  implementation "androidx.core:core-ktx:1.17.0"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
+
+  // Used to unpack the Linux root filesystem (.tar.xz / .tar.gz).
+  implementation "org.apache.commons:commons-compress:1.27.1"
+  implementation "org.tukaani:xz:1.10"
+}

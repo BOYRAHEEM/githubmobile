@@ -1,0 +1,47 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install tools for fetch-binaries
+        run: sudo apt-get update && sudo apt-get install -y binutils patchelf xz-utils
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch proot binaries
+        run: bash scripts/fetch-binaries.sh
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: repo-runner-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
