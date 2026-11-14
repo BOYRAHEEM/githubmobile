@@ -66,7 +66,12 @@ object ProcessTree {
 
   /** PID of a java.lang.Process (public API only from Android 13). */
   fun pidOf(p: Process): Int? {
-    if (Build.VERSION.SDK_INT >= 33) return p.pid().toInt()
+    // Process.pid() is called reflectively: it isn't exposed in the compile SDK stubs.
+    if (Build.VERSION.SDK_INT >= 33) {
+      try {
+        return (Process::class.java.getMethod("pid").invoke(p) as Long).toInt()
+      } catch (_: Exception) {}
+    }
     return try {
       p.javaClass.getDeclaredField("pid").apply { isAccessible = true }.getInt(p)
     } catch (_: Exception) {
